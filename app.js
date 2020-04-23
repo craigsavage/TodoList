@@ -3,6 +3,9 @@ const express = require('express'),
 
 const bodyParser = require('body-parser');
 
+// Variables
+let items = [];
+
 // Let app use ejs
 app.set('view engine', 'ejs');
 
@@ -10,23 +13,29 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
 // parse application/x-www-form-urlencoded & application/json
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // Routes
 app.get('/', (req, res) => {
     let today = new Date();
-    let currentDay = today.getDay();
-    let message = '';
 
-    // Based of the day of the week
-    if(currentDay === 0 || currentDay === 6) {
-        message = 'yay its the weekend';
-    } else {
-        message = 'Boo, I have work!';
+    let options = {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
     }
 
-    res.render('index', {message: message})
+    let todaysDate = today.toLocaleDateString("en-US", options);
+    console.log(`Today's date: ${todaysDate}`);
+
+    res.render('list', {todaysDate: todaysDate, items: items});
+});
+
+app.post('/', (req, res) => {
+    items.push(req.body.todoItem);
+    console.log(items);
+    res.redirect('/');
 });
 
 // SERVER

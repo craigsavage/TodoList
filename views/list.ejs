@@ -1,0 +1,16 @@
+<%- include ("partials/header.ejs") %>
+
+<h1 style="color: salmon;"><%= todaysDate %></h1>
+
+<form action="/" method="post">
+    <input type="text" name="todoItem" placeholder="Add to your todo list...">
+    <button type="submit">ADD</button>
+</form>
+
+<ul>
+    <% items.forEach((item) => { %>   
+        <li><%= item %></li>
+    <% }) %>
+</ul>
+
+<%- include ("partials/footer.ejs") %>
