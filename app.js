@@ -1,10 +1,33 @@
 const express = require('express'),
-      app     = express();
+    app = express();
 
-const bodyParser = require('body-parser');
+const mongoose = require('mongoose'),
+      bodyParser = require('body-parser'),
+      _ = require('lodash');
 
-// Variables
-let items = [];
+// Modules
+const date = require('./public/js/date.js');
+
+// Connection URL && Database Name
+// For Mongo Atlas connection
+const db_login    = 'todo-admin',
+      db_password = 'todopassword';
+
+// For local connection
+const db_name    = 'todolistDB',
+      local_url = `mongodb://localhost/${db_name}`,
+      atlas_url = `mongodb+srv://${db_login}:${db_password}@cluster0-xk65r.mongodb.net/${db_name}`;
+      
+// Connect to Mongo Database
+mongoose.connect(atlas_url, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useFindAndModify: false
+});
+
+// Database Models
+const Item = require('./models/Item').model;
+const List = require('./models/List');
 
 // Let app use ejs
 app.set('view engine', 'ejs');
@@ -16,26 +39,103 @@ app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// Starter Items
+const item1 = new Item({ name: 'Welcome to your todo list!' });
+const item2 = new Item({ name: '<-- Check to remove item.' });
+
+const defaultItems = [item1, item2];
+
+// Item.insertMany(defaultItems, (err, data) => {
+//     if(err) { console.log(err) }
+//     else { console.log(data) }
+// });
+
 // Routes
 app.get('/', (req, res) => {
-    let today = new Date();
+    // Find all entries in the database
+    Item.find((err, items) => {
+        if (err) { console.log(err) }
+        else {
+            res.render('list', { listTitle: "Today", items: items });
+        }
+    });
+});
 
-    let options = {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long'
-    }
+app.get('/:todoListName', (req, res) => {
+    const todoListName = _.capitalize(req.params.todoListName);
 
-    let todaysDate = today.toLocaleDateString("en-US", options);
-    console.log(`Today's date: ${todaysDate}`);
+    // Directs user to the correct todo list
+    List.findOne({ name: todoListName }, (err, foundList) => {
+        if (err) { console.log(err) }
+        else {
+            if (!foundList) {
+                console.log(`Creating a new list: ${todoListName}`);
 
-    res.render('list', {todaysDate: todaysDate, items: items});
+                // Creates new list
+                const list = new List({
+                    name: todoListName,
+                    items: defaultItems
+                });
+                list.save();
+
+                // Redirects to newly created todo list
+                res.redirect('/' + todoListName);
+            } else {
+                // Show an existing list
+                res.render('list', { listTitle: foundList.name, items: foundList.items });
+            }
+        }
+    });
 });
 
 app.post('/', (req, res) => {
-    items.push(req.body.todoItem);
-    console.log(items);
-    res.redirect('/');
+    const itemName = req.body.todoItem;
+    const listName = req.body.list;
+
+    const item = new Item({
+        name: itemName
+    });
+
+    if (listName === 'Today') {
+        // Add to main list
+        item.save();
+        res.redirect('/');
+    } else {
+        List.findOne({name: listName}, (err, foundList) => {
+            if (err) { console.log(err) }
+            else {
+                foundList.items.push(item);
+                foundList.save();
+                res.redirect('/' + listName);
+            }
+        });
+    }
+});
+
+// Deletes checked item from database
+app.post('/delete', (req, res) => {
+    const checkedItemID = req.body.delete;
+    const listName = req.body.listName;
+
+    if(listName === "Today") {
+        Item.deleteOne({ _id: checkedItemID }, (err, deletedItem) => {
+            if (err) { console.log('There was an error deleting the item.\n', err) }
+            else {
+                console.log('Item deleted:', deletedItem);
+                res.redirect('/');
+            }
+        });
+    } else {
+        List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemID}}}, (err, foundList) => {
+            if (err) { console.log(err) }
+            else {
+                console.log(foundList);
+                
+                // foundList.items.pull({_id: item});
+                res.redirect('/' + listName);
+            }
+        })
+    }
 });
 
 // SERVER
