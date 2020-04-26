@@ -1,3 +1,4 @@
+// Setup
 const express = require('express'),
     app = express();
 
@@ -5,20 +6,13 @@ const mongoose = require('mongoose'),
       bodyParser = require('body-parser'),
       _ = require('lodash');
 
-// Modules
-const date = require('./public/js/date.js');
+// Exports
+const keys = require('./keys/keys');
 
-// Connection URL && Database Name
-// For Mongo Atlas connection
-const db_login    = 'todo-admin',
-      db_password = 'todopassword';
-
-// For local connection
-const db_name    = 'todolistDB',
-      local_url = `mongodb://localhost/${db_name}`,
-      atlas_url = `mongodb+srv://${db_login}:${db_password}@cluster0-xk65r.mongodb.net/${db_name}`;
-      
 // Connect to Mongo Database
+const local_url = `mongodb://localhost/${keys.db_name}`,
+      atlas_url = `mongodb+srv://${keys.db_login}:${keys.db_password}@cluster0-xk65r.mongodb.net/${keys.db_name}`;
+
 mongoose.connect(atlas_url, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -44,11 +38,6 @@ const item1 = new Item({ name: 'Welcome to your todo list!' });
 const item2 = new Item({ name: '<-- Check to remove item.' });
 
 const defaultItems = [item1, item2];
-
-// Item.insertMany(defaultItems, (err, data) => {
-//     if(err) { console.log(err) }
-//     else { console.log(data) }
-// });
 
 // Routes
 app.get('/', (req, res) => {
@@ -88,6 +77,7 @@ app.get('/:todoListName', (req, res) => {
     });
 });
 
+// Adds todo item to specific list in database
 app.post('/', (req, res) => {
     const itemName = req.body.todoItem;
     const listName = req.body.list;
