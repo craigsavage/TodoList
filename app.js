@@ -6,14 +6,14 @@ const mongoose = require('mongoose'),
       bodyParser = require('body-parser'),
       _ = require('lodash');
 
-// Exports
-const keys = require('./keys/keys');
+// Linking environment variables
+require('dotenv').config();
 
-// Connect to Mongo Database
-const local_url = `mongodb://localhost/${keys.db_name}`,
-      atlas_url = `mongodb+srv://${keys.db_login}:${keys.db_password}@cluster0-xk65r.mongodb.net/${keys.db_name}`;
+// Connecting Mongo Database
+const LOCAL_URL = `mongodb://localhost/${process.env.DB_NAME}`;
+      ATLAS_URL = `mongodb+srv://${process.env.DB_LOGIN}:${process.env.DB_PASSWORD}@cluster0-xk65r.mongodb.net/${process.env.DB_NAME}`
 
-mongoose.connect(atlas_url, {
+mongoose.connect(ATLAS_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useFindAndModify: false
